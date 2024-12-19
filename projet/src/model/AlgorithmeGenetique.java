@@ -1,5 +1,7 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class AlgorithmeGenetique {
@@ -39,32 +41,24 @@ public class AlgorithmeGenetique {
     }
 
     private Circuit crossover(Circuit parent1, Circuit parent2) {
-        Circuit enfant = new Circuit(villes);
+        List<Ville> enfantVilles = new ArrayList<>(Collections.nCopies(parent1.getTaille(), null));
         int startPos = (int) (Math.random() * parent1.getTaille());
-        int endPos = (int) (Math.random() * parent1.getTaille());
-
-        for (int i = 0; i < enfant.getTaille(); i++) {
-            if (startPos < endPos && i > startPos && i < endPos) {
-                enfant.setVille(i, parent1.getVille(i));
-            } else if (startPos > endPos) {
-                if (!(i < startPos && i > endPos)) {
-                    enfant.setVille(i, parent1.getVille(i));
-                }
+        int index = startPos;
+        
+        do {
+            enfantVilles.set(index, parent1.getVille(index));
+            index = parent1.getVilles().indexOf(parent2.getVille(index));
+        } while (index != startPos);
+        
+        for (int i = 0; i < parent1.getTaille(); i++) {
+            if (enfantVilles.get(i) == null) {
+                enfantVilles.set(i, parent2.getVille(i));
             }
         }
-
-        for (int i = 0; i < parent2.getTaille(); i++) {
-            if (!enfant.contientVille(parent2.getVille(i))) {
-                for (int j = 0; j < enfant.getTaille(); j++) {
-                    if (enfant.getVille(j) == null) {
-                        enfant.setVille(j, parent2.getVille(i));
-                        break;
-                    }
-                }
-            }
-        }
-        return enfant;
+        
+        return new Circuit(enfantVilles);
     }
+
 
     private void muter(Circuit circuit) {
         for (int pos1 = 0; pos1 < circuit.getTaille(); pos1++) {
