@@ -44,175 +44,185 @@ public class Main {
 
 	    	    private static void afficherMenu() {
 	    	        System.out.println("\n--- Menu ---");
-	    	        System.out.println("1. Créer une personne (étudiant, chercheur, titulaire)");
+	    	        System.out.println("1. Créer une personne (étudiant,titulaire)");
 	                System.out.println("2. Rechercher un cycle hamiltonien");
 	    	        System.out.println("3. Quitter");
 	    	        System.out.print("Votre choix : ");
 	    	    }
 
-	    	    private static void creerPersonne(List<Personne> personnes, List<Ville> villes) {
+	    	    private static void creerPersonne(List<Personne> personnes,List<Ville> villes) {
 	    	        Scanner scanner = new Scanner(System.in);
 	    	        System.out.println("Quel type de personne voulez-vous créer ?");
 	    	        System.out.println("1. Étudiant");
-	    	        System.out.println("2. Chercheur");
-	    	        System.out.println("3. Titulaire");
+	    	
+	    	        System.out.println("2. Titulaire");
 	    	        int choix = scanner.nextInt();
-	    	        scanner.nextLine(); 
+	    	        scanner.nextLine();
+
+	    	        // Collecter les données communes
+	    	        Map<String, Object> commonData = collecterDonneesCommunes(scanner, villes);
+
 	    	        switch (choix) {
 	    	            case 1:
-	    	                creerEtudiant(personnes, villes);
+	    	                creerEtudiant(personnes, commonData, scanner);
 	    	                break;
+	    	            
+	    	           
 	    	            case 2:
-	    	                creerChercheur(personnes, villes);
-	    	                break;
-	    	            case 3:
-	    	                creerTitulaire(personnes, villes);
+	    	                creerTitulaire(personnes, commonData, scanner);
 	    	                break;
 	    	            default:
 	    	                System.out.println("Choix invalide.");
 	    	        }
 	    	    }
+
+	    	    private static Map<String, Object> collecterDonneesCommunes(Scanner scanner, List<Ville> villes) {
+	    	        Map<String, Object> data = new HashMap<>();
+	    	        System.out.print("Nom : ");
+	    	        data.put("nom", scanner.nextLine());
+	    	        System.out.print("Prénom : ");
+	    	        data.put("prenom", scanner.nextLine());
+	    	        System.out.print("Âge : ");
+	    	        data.put("age", scanner.nextInt());
+	    	        scanner.nextLine();
+
+	    	        // Choix de la ville
+	    	        data.put("ville", choisirVille(scanner, villes));
+	    	        return data;
+	    	    }
+
 	    	    
-	    	    private static void creerEtudiant(List<Personne> personnes, List<Ville> villes) {
-	    	        Scanner scanner = new Scanner(System.in);
-	    	        System.out.print("Nom de l'étudiant : ");
-	    	        String nom = scanner.nextLine();
-	    	        System.out.print("Prénom de l'étudiant : ");
-	    	        String prenom = scanner.nextLine();
-	    	        System.out.print("Âge de l'étudiant : ");
-	    	        int age = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
+	    	    private static Ville choisirVille( Scanner scanner,List<Ville> villes) {
+	    	        Ville ville = null;
+	    	        while (ville == null) {  // Tant qu'aucune ville valide n'est trouvée
+	    	            System.out.print("Nom de la ville : ");
+	    	            String nomVille = scanner.nextLine();
 
-	    	        System.out.println("Choisissez une ville :");
-	    	        for (int i = 0; i < villes.size(); i++) {
-	    	            System.out.println(i + ". " + villes.get(i).getNom());
+	    	            // Filtrer les villes par nom
+	    	            List<Ville> villesFiltrees = villes.stream()
+	    	                    .filter(v -> v.getNom().equalsIgnoreCase(nomVille))
+	    	                    .collect(Collectors.toList());
+
+	    	            if (villesFiltrees.isEmpty()) {
+	    	                System.out.println("Aucune ville trouvée avec ce nom. Veuillez réessayer.");
+	    	            } else {
+	    	                // Si plusieurs villes existent avec le même nom, demander de spécifier le département
+	    	                if (villesFiltrees.size() == 1) {
+	    	                    ville = villesFiltrees.get(0);
+	    	                } else {
+	    	                    System.out.println("Plusieurs villes trouvées. Veuillez préciser le département :");
+	    	                    for (int i = 0; i < villesFiltrees.size(); i++) {
+	    	                        System.out.println(i + ". " + villesFiltrees.get(i).getNom() + " (Département : " + villesFiltrees.get(i).getDepartement() + ")");
+	    	                    }
+	    	                    int villeIndex = scanner.nextInt();
+	    	                    scanner.nextLine(); // Consommer la nouvelle ligne
+	    	                    ville = villesFiltrees.get(villeIndex);
+	    	                }
+	    	            }
 	    	        }
-	    	        int villeIndex = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-	    	        Ville ville = villes.get(villeIndex);
+	    	        return ville;  // Retourne la ville choisie une fois trouvée
+	    	    }
 
+
+	    	    private static void creerEtudiant(List<Personne> personnes, Map<String, Object> commonData, Scanner scanner) {
 	    	        System.out.print("Sujet de thèse : ");
 	    	        String sujetDeThese = scanner.nextLine();
 
+	    	        Discipline discipline = choisirDiscipline(scanner);
+
+	    	        System.out.print("Année de thèse (1, 2 ou 3) : ");
+	    	        int anneeDeThese = scanner.nextInt();
+	    	        scanner.nextLine();
+
+	    	        List<Titulaire> titulaires = personnes.stream()
+	    	                .filter(p -> p instanceof Titulaire)
+	    	                .map(p -> (Titulaire) p)
+	    	                .toList();
+	    	        System.out.println("Choisissez un encadrant parmi les titulaires :");
+	    	        Titulaire encadrant = choisirTitulaire(scanner, titulaires);
+
+	    	        Ville ville = (Ville) commonData.get("ville");
+	    	        Etudiant etudiant = new Etudiant(
+	    	                (String) commonData.get("nom"),
+	    	                (String) commonData.get("prenom"),
+	    	                (int) commonData.get("age"),
+	    	                ville, sujetDeThese, discipline, anneeDeThese, encadrant
+	    	        );
+	    	        personnes.add(etudiant);
+	    	        System.out.println("Étudiant créé avec succès.");
+	    	    }
+
+	    	    private static Discipline choisirDiscipline(Scanner scanner) {
 	    	        System.out.println("Choisissez une discipline :");
 	    	        Discipline[] disciplines = Discipline.values();
 	    	        for (int i = 0; i < disciplines.length; i++) {
 	    	            System.out.println(i + ". " + disciplines[i]);
 	    	        }
 	    	        int disciplineIndex = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-	    	        Discipline discipline = disciplines[disciplineIndex];
+	    	        scanner.nextLine();
+	    	        return disciplines[disciplineIndex];
+	    	    }
 
-	    	        System.out.print("Année de thèse (1, 2 ou 3) : ");
-	    	        int anneeDeThese = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-
-	    	        System.out.println("Choisissez un encadrant parmi les titulaires :");
-	    	        List<Titulaire> titulaires = personnes.stream()
-	    	                .filter(p -> p instanceof Titulaire)
-	    	                .map(p -> (Titulaire) p)
-	    	                .collect(Collectors.toList());
+	    	    private static Titulaire choisirTitulaire(Scanner scanner, List<Titulaire> titulaires) {
 	    	        for (int i = 0; i < titulaires.size(); i++) {
 	    	            System.out.println(i + ". " + titulaires.get(i).getNomComplet());
 	    	        }
 	    	        int encadrantIndex = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-	    	        Titulaire encadrant = titulaires.get(encadrantIndex);
-
-	    	        Etudiant etudiant = new Etudiant(nom, prenom, age, ville, sujetDeThese, discipline, anneeDeThese, encadrant);
-	    	        personnes.add(etudiant);
-	    	        System.out.println("Étudiant créé avec succès.");
+	    	        scanner.nextLine();
+	    	        return titulaires.get(encadrantIndex);
 	    	    }
 
-	    	    private static void creerChercheur(List<Personne> personnes, List<Ville> villes) {
-	    	        Scanner scanner = new Scanner(System.in);
-	    	        System.out.print("Nom du chercheur : ");
-	    	        String nom = scanner.nextLine();
-	    	        System.out.print("Prénom du chercheur : ");
-	    	        String prenom = scanner.nextLine();
-	    	        System.out.print("Âge du chercheur : ");
-	    	        int age = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
+	    	   
 
-	    	        System.out.println("Choisissez une ville :");
-	    	        for (int i = 0; i < villes.size(); i++) {
-	    	            System.out.println(i + ". " + villes.get(i).getNom());
-	    	        }
-	    	        int villeIndex = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-	    	        Ville ville = villes.get(villeIndex);
 
-	    	        Set<Discipline> disciplines = new HashSet<>();
-	    	        System.out.println("Choisissez une ou deux disciplines :");
-	    	        Discipline[] allDisciplines = Discipline.values();
-	    	        for (int i = 0; i < allDisciplines.length; i++) {
-	    	            System.out.println(i + ". " + allDisciplines[i]);
-	    	        }
-	    	        int discipline1Index = scanner.nextInt();
-	    	        disciplines.add(allDisciplines[discipline1Index]);
-	    	        System.out.print("Voulez-vous ajouter une deuxième discipline ? (o/n) : ");
-	    	        if (scanner.next().toLowerCase().charAt(0) == 'o') {
-	    	            System.out.println("Choisissez la deuxième discipline :");
-	    	            int discipline2Index = scanner.nextInt();
-	    	            disciplines.add(allDisciplines[discipline2Index]);
-	    	        }
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
 
-	    	        Chercheur chercheur = new Chercheur(nom, prenom, age, ville, disciplines);
-	    	        personnes.add(chercheur);
-	    	        System.out.println("Chercheur créé avec succès.");
-	    	    }
+private static void creerTitulaire(List<Personne> personnes, Map<String, Object> commonData, Scanner scanner) {
+    System.out.println("Choisissez le type de titulaire :");
+    System.out.println("1. MCF");
+    System.out.println("2. Chercheur");
+    int choixTitulaire = scanner.nextInt();
+    scanner.nextLine();  // Consomme la nouvelle ligne
 
-	    	    private static void creerTitulaire(List<Personne> personnes, List<Ville> villes) {
-	    	        Scanner scanner = new Scanner(System.in);
-	    	        System.out.print("Nom du titulaire : ");
-	    	        String nom = scanner.nextLine();
-	    	        System.out.print("Prénom du titulaire : ");
-	    	        String prenom = scanner.nextLine();
-	    	        System.out.print("Âge du titulaire : ");
-	    	        int age = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
+    Discipline discipline = choisirDiscipline(scanner);
 
-	    	        System.out.println("Choisissez une ville :");
-	    	        for (int i = 0; i < villes.size(); i++) {
-	    	            System.out.println(i + ". " + villes.get(i).getNom());
-	    	        }
-	    	        int villeIndex = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
-	    	        Ville ville = villes.get(villeIndex);
+    System.out.print("Souhaitez-vous ajouter une autre discipline ? (o/n) : ");
+    String ajouterDeuxiemeDiscipline = scanner.nextLine();
 
-	    	        Set<Discipline> disciplines = new HashSet<>();
-	    	        System.out.println("Choisissez une ou deux disciplines :");
-	    	        Discipline[] allDisciplines = Discipline.values();
-	    	        for (int i = 0; i < allDisciplines.length; i++) {
-	    	            System.out.println(i + ". " + allDisciplines[i]);
-	    	        }
-	    	        int discipline1Index = scanner.nextInt();
-	    	        disciplines.add(allDisciplines[discipline1Index]);
-	    	        System.out.print("Voulez-vous ajouter une deuxième discipline ? (o/n) : ");
-	    	        if (scanner.next().toLowerCase().charAt(0) == 'o') {
-	    	            System.out.println("Choisissez la deuxième discipline :");
-	    	            int discipline2Index = scanner.nextInt();
-	    	            disciplines.add(allDisciplines[discipline2Index]);
-	    	        }
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
+    Set<Discipline> disciplines = new HashSet<>();
+    disciplines.add(discipline);
+    if (ajouterDeuxiemeDiscipline.equalsIgnoreCase("o")) {
+        Discipline discipline2 = choisirDiscipline(scanner);
+        disciplines.add(discipline2);
+    }
 
-	    	        System.out.println("Choisissez le type de titulaire :");
-	    	        System.out.println("1. MCF");
-	    	        System.out.println("2. Chercheur");
-	    	        int choixType = scanner.nextInt();
-	    	        scanner.nextLine(); // Consommer la nouvelle ligne
+    Ville ville = (Ville) commonData.get("ville");
+    Titulaire titulaire;
 
-	    	        Titulaire titulaire;
-	    	        if (choixType == 1) {
-	    	            titulaire = new MCF(nom, prenom, age, ville, disciplines);
-	    	        } else {
-	    	            titulaire = new Chercheur(nom, prenom, age, ville, disciplines);
-	    	        }
-	    	        personnes.add(titulaire);
-	    	        System.out.println("Titulaire créé avec succès.");
-	    	    }
-	    	    
+    if (choixTitulaire == 1) {
+        titulaire = new MCF(
+                (String) commonData.get("nom"),
+                (String) commonData.get("prenom"),
+                (int) commonData.get("age"),
+                ville,
+                disciplines
+        );
+    } else if (choixTitulaire == 2) {
+        titulaire = new Chercheur(
+                (String) commonData.get("nom"),
+                (String) commonData.get("prenom"),
+                (int) commonData.get("age"),
+                ville,
+                disciplines
+        );
+    } else {
+        System.out.println("Choix invalide.");
+        return;
+    }
+
+    personnes.add(titulaire);
+    System.out.println("Titulaire créé avec succès !");
+}
+
 	    	    private static void rechercherCycleHamiltonien(List<Personne> personnes, List<Ville> villes) {
 	    	        Scanner scanner = new Scanner(System.in);
 	    	        System.out.println("Choisissez le type de recherche :");
@@ -276,6 +286,8 @@ public class Main {
 
 	   }
 
+	    
+	
 	    
 	
 
