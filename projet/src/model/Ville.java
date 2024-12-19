@@ -1,5 +1,9 @@
 package model;
 
+//import java.sql.Connection;
+//import java.sql.PreparedStatement;
+//import java.sql.ResultSet;
+//import java.sql.SQLException;
 
 public class Ville {
     private String nom;
@@ -98,7 +102,7 @@ public class Ville {
                '}';
     }
     
-    public double distanceTo(Ville autreVille) {
+   public double distanceTo(Ville autreVille) {
         final int R = 6371; // Rayon de la Terre en kilomètres
 
         double lat1 = Math.toRadians(this.latitude);
@@ -116,4 +120,27 @@ public class Ville {
 
         return R * c;
     }
+
+
+    
+   /* public static double calculerDistanceEntreVilles(Connection connection, String ville1Nom, String ville1Dept, String ville2Nom, String ville2Dept) throws SQLException {
+        String sql = "EXECUTE calcul_distance($1, $2, $3, $4)";
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, ville1Nom);
+            pstmt.setString(2, ville1Dept);
+            pstmt.setString(3, ville2Nom);
+            pstmt.setString(4, ville2Dept);
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("distance_km");
+                }
+            }
+        }
+        throw new SQLException("Impossible de calculer la distance");
+    }
+
+    public double distanceTo(Ville autreVille, Connection connection) throws SQLException {
+        return calculerDistanceEntreVilles(connection, this.nom, this.departement, autreVille.getNom(), autreVille.getDepartement());
+    }*/
 }
